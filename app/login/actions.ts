@@ -11,11 +11,6 @@ const loginSchema = z.object({
   senha: z.string().min(1, "Informe a senha de acesso."),
 });
 
-const definirSenhaSchema = z.object({
-  email: z.string().email("Informe um endereço de e-mail válido."),
-  novaSenha: z.string().min(6, "A nova senha deve possuir no mínimo 6 caracteres."),
-});
-
 export type EstadoLogin = {
   erro?: string;
   sucesso?: boolean;
@@ -116,7 +111,7 @@ export async function autenticarUsuario(
   // Senhas com valor provisório exigem definição inicial
   if (!perfil.senha_hash || perfil.senha_hash === "PROVISORIO_TROCAR_VIA_APP") {
     return {
-      erro: "Senha inicial ainda não definida para este usuário. Use a opção de definição de senha inicial.",
+      erro: "Senha inicial ainda não definida para este usuário. Solicite à administração a definição da senha.",
     };
   }
 
@@ -141,53 +136,4 @@ export async function autenticarUsuario(
 export async function logoutUsuario() {
   await destruirSessao();
   redirect("/login");
-}
-
-/**
- * Permite definir a senha real inicial para usuárias de teste que estão com 'PROVISORIO_TROCAR_VIA_APP'.
- * Custo do bcrypt: 12.
- */
-export async function definirSenhaInicial(
-  formData: FormData
-): Promise<{ erro?: string; sucesso?: boolean }> {
-  const dados = {
-    email: formData.get("email"),
-    novaSenha: formData.get("novaSenha"),
-  };
-
-  const validacao = definirSenhaSchema.safeParse(dados);
-  if (!validacao.success) {
-    return { erro: validacao.error.issues[0]?.message ?? "Dados inválidos." };
-  }
-
-  const pool = await getPool();
-  const request = pool.request();
-
-  const resultado = await request.input(
-    "email",
-    sql.VarChar(255),
-    validacao.data.email.toLowerCase().trim()
-  ).query(`
-      SELECT 
-        CAST(id AS NVARCHAR(50)) AS id,
-        senha_hash
-      FROM dados.perfis
-      WHERE email = @email
-    `);
-
-  const perfil = resultado.recordset[0];
-  if (!perfil) {
-    return { erro: "Usuário não localizado." };
-  }
-
-  const hash = await bcrypt.hash(validacao.data.novaSenha, 12);
-
-  await pool.request().input("id", sql.VarChar(50), perfil.id).input("hash", sql.VarChar(255), hash)
-    .query(`
-      UPDATE dados.perfis
-      SET senha_hash = @hash, atualizado_em = SYSUTCDATETIME()
-      WHERE id = @id
-    `);
-
-  return { sucesso: true };
 }

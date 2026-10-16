@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-
-const SEGREDO_JWT = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "chave-secreta-padrao-minimo-32-caracteres-para-dev"
-);
+import { obterSegredoJwt } from "@/lib/auth/segredo";
 
 const NOME_COOKIE_SESSAO = "chamados_unopar_session";
 
@@ -13,7 +10,7 @@ export async function middleware(request: NextRequest) {
 
   if (token) {
     try {
-      await jwtVerify(token, SEGREDO_JWT);
+      await jwtVerify(token, obterSegredoJwt());
       usuarioAutenticado = true;
     } catch {
       usuarioAutenticado = false;
@@ -25,6 +22,8 @@ export async function middleware(request: NextRequest) {
     ehRotaLogin ||
     request.nextUrl.pathname.startsWith("/_next") ||
     request.nextUrl.pathname.startsWith("/api/public") ||
+    // API do agente: autenticada por token Bearer na própria rota (lib/agente/auth.ts)
+    request.nextUrl.pathname.startsWith("/api/agente/") ||
     request.nextUrl.pathname === "/favicon.ico" ||
     request.nextUrl.pathname === "/logo.png";
 

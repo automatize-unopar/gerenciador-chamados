@@ -1,12 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { cache } from "react";
-
-function getSecret(): Uint8Array {
-  return new TextEncoder().encode(
-    process.env.AUTH_SECRET || "chave-secreta-padrao-minimo-32-caracteres-para-dev"
-  );
-}
+import { obterSegredoJwt } from "./segredo";
 
 const NOME_COOKIE_SESSAO = "chamados_unopar_session";
 const DURACAO_SESSAO_SEGUNDOS = 8 * 60 * 60; // 8 horas
@@ -28,7 +23,7 @@ export async function criarSessao(payload: PayloadSessao): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${DURACAO_SESSAO_SEGUNDOS}s`)
-    .sign(getSecret());
+    .sign(obterSegredoJwt());
 
   const cookieStore = await cookies();
   cookieStore.set(NOME_COOKIE_SESSAO, jwt, {
@@ -51,7 +46,7 @@ export async function verificarToken(token?: string | null): Promise<PayloadSess
   }
 
   try {
-    const { payload } = await jwtVerify(token, getSecret());
+    const { payload } = await jwtVerify(token, obterSegredoJwt());
     return payload as unknown as PayloadSessao;
   } catch {
     return null;
