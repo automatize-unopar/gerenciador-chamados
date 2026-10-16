@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+anexos_storage
+.env*
+!.env.example
+*.tsbuildinfo
+.agents
