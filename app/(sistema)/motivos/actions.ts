@@ -10,7 +10,11 @@ import { capitalizarMotivo } from "@/lib/utils/capitalizar-motivo";
 const motivoSchema = z.object({
   id: z.string().optional(),
   nome: z.string().trim().min(3, "O nome do motivo deve conter pelo menos 3 caracteres."),
-  filtro: z.string().trim().optional().nullable(),
+  filtro: z
+    .string()
+    .trim()
+    .min(1, "Informe o Filtro (Caminho do Motivo).")
+    .max(500, "O caminho deve ter no máximo 500 caracteres."),
 });
 
 export type SimilaridadeResultado = {
@@ -64,8 +68,7 @@ export async function salvarMotivoAction(
   const perfil = await obterPerfilAtual();
   const id = formData.get("id") ? String(formData.get("id")) : undefined;
   const nome = String(formData.get("nome") || "");
-  const filtroBruto = formData.get("filtro");
-  const filtro = filtroBruto ? String(filtroBruto).trim() : null;
+  const filtro = String(formData.get("filtro") || "");
   const confirmacaoForcada = formData.get("confirmacao_forcada") === "true";
 
   const parseResult = motivoSchema.safeParse({ id, nome, filtro });
@@ -75,7 +78,7 @@ export async function salvarMotivoAction(
 
   const nomeLimpo = capitalizarMotivo(parseResult.data.nome);
   const nomeNormalizado = normalizarTexto(nomeLimpo);
-  const filtroLimpo = parseResult.data.filtro || null;
+  const filtroLimpo = parseResult.data.filtro;
 
   // Se não for edição e não foi confirmação forçada, verifica similaridade
   if (!id && !confirmacaoForcada) {
@@ -99,6 +102,11 @@ export async function salvarMotivoAction(
           WHERE object_id = OBJECT_ID('dados.motivos') AND name = 'filtro'
         `);
         const temColunaFiltro = checkCol.recordset.length > 0;
+        if (!temColunaFiltro) {
+          throw new Error(
+            "O banco precisa da coluna filtro para salvar o caminho obrigatório do motivo."
+          );
+        }
 
         // Se for edição de um motivo existente
         if (id) {

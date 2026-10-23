@@ -76,6 +76,11 @@ export function PainelMotivos({ motivos, perfilAtual }: PainelMotivosProps) {
     setMensagemErro(null);
     setMensagemSucesso(null);
 
+    if (!filtro.trim()) {
+      setMensagemErro("Informe o Filtro (Caminho do Motivo).");
+      return;
+    }
+
     if (!motivoEditando && motivosSimilares.length > 0 && !confirmouCriacaoMesmoSimilar) {
       setMensagemErro(
         "Atenção: existem motivos muito semelhantes já cadastrados. Revise a lista ou confirme a criação."
@@ -267,14 +272,20 @@ export function PainelMotivos({ motivos, perfilAtual }: PainelMotivosProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-texto mb-1">
-                  Filtro (Caminho do Motivo)
+                <label
+                  htmlFor="filtro-motivo"
+                  className="block text-xs font-medium text-texto mb-1"
+                >
+                  Filtro (Caminho do Motivo) *
                 </label>
                 <p className="text-[11px] text-texto-suave mb-1.5">
                   Informe o caminho ou categoria da solicitação para guiar quem registra o chamado.
                 </p>
                 <input
                   type="text"
+                  id="filtro-motivo"
+                  required
+                  maxLength={500}
                   value={filtro}
                   onChange={(e) => setFiltro(e.target.value)}
                   placeholder="Ex: Solicitações Acadêmicas > Provas > Correção de Nota"
