@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { obterPerfilAtual } from "@/lib/auth/perfil";
 import { comUsuario, comTransacao } from "@/lib/db/comUsuario";
 import { sql } from "@/lib/db/pool";
+import { capitalizarMotivo } from "@/lib/utils/capitalizar-motivo";
 
 const motivoSchema = z.object({
   id: z.string().optional(),
@@ -72,7 +73,7 @@ export async function salvarMotivoAction(
     return { erro: parseResult.error.issues[0]?.message || "Nome inválido." };
   }
 
-  const nomeLimpo = parseResult.data.nome;
+  const nomeLimpo = capitalizarMotivo(parseResult.data.nome);
   const nomeNormalizado = normalizarTexto(nomeLimpo);
   const filtroLimpo = parseResult.data.filtro || null;
 
