@@ -35,7 +35,8 @@ export const obterNotificacoesPrazos = cache(
       const limiteMaximo = endOfDay(addDays(hoje, 2));
 
       return await comUsuario({ usuario_id: perfil.id, papel: perfil.papel }, async (req) => {
-        let sqlFiltros = "WHERE c.excluido_em IS NULL AND c.situacao = 'aguardando'";
+        let sqlFiltros =
+          "WHERE c.excluido_em IS NULL AND c.situacao IN ('aguardando', 'escalonado')";
 
         // Se não for admin e tiver polo associado, restringe aos chamados do polo
         if (!ehAdmin && perfil.polo_id) {

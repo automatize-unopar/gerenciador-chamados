@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { anexarArquivoAction, excluirArquivoAction, excluirChamadoAction } from "../actions";
 import { formatarCpf } from "@/lib/utils/cpf";
+import { ROTULOS_SITUACAO } from "@/lib/chamados/situacao";
 
 interface PainelDetalheChamadoProps {
   chamado: Chamado & {
@@ -195,7 +196,7 @@ export function PainelDetalheChamado({
                       : "bg-acento/15 text-acento border-acento/40"
                 }`}
               >
-                {chamado.situacao}
+                {ROTULOS_SITUACAO[chamado.situacao]}
               </span>
               {chamado.prioridade === "priorizar" && (
                 <span className="rounded-md border border-alerta/50 bg-alerta-fundo px-2.5 py-1 text-xs font-bold text-alerta">

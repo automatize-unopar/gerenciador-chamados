@@ -1,5 +1,5 @@
 export type PapelUsuario = "admin" | "coordenador" | "atendente";
-export type SituacaoChamado = "aguardando" | "concluido" | "encerrado" | "rascunho";
+export type SituacaoChamado = "aguardando" | "concluido" | "encerrado" | "rascunho" | "escalonado";
 export type PrioridadeChamado = "normal" | "priorizar";
 
 export interface Polo {

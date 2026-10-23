@@ -30,6 +30,7 @@ import { CustomCheckbox } from "@/components/ui/custom-checkbox";
 import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 import { formatarCpf } from "@/lib/utils/cpf";
 import { FiltroColunaExcel } from "@/components/ui/filtro-coluna-excel";
+import { chamadoEstaAberto, ROTULOS_SITUACAO } from "@/lib/chamados/situacao";
 
 export type TipoFiltroPrazo = "todos" | "vencidos" | "vence_hoje" | "vence_2dias" | "pendentes";
 
@@ -185,23 +186,23 @@ export function TabelaChamados({
   // Contagens para o Painel Operacional de Prazos (baseado no conjunto atual carregado)
   const totalVencidos = chamados.filter(
     (c) =>
-      c.situacao === "aguardando" &&
+      chamadoEstaAberto(c.situacao) &&
       differenceInCalendarDays(startOfDay(parseISO(c.prazo)), hoje) < 0
   ).length;
 
   const totalVenceHoje = chamados.filter(
     (c) =>
-      c.situacao === "aguardando" &&
+      chamadoEstaAberto(c.situacao) &&
       differenceInCalendarDays(startOfDay(parseISO(c.prazo)), hoje) === 0
   ).length;
 
   const totalVence2Dias = chamados.filter((c) => {
-    if (c.situacao !== "aguardando") return false;
+    if (!chamadoEstaAberto(c.situacao)) return false;
     const diff = differenceInCalendarDays(startOfDay(parseISO(c.prazo)), hoje);
     return diff === 1 || diff === 2;
   }).length;
 
-  const totalPendentes = chamados.filter((c) => c.situacao === "aguardando").length;
+  const totalPendentes = chamados.filter((c) => chamadoEstaAberto(c.situacao)).length;
 
   // Opções formatadas para os CustomSelects
   const opcoesSituacao: CustomSelectOption[] = [
@@ -210,6 +211,7 @@ export function TabelaChamados({
     { value: "concluido", label: "Concluído (Resolvido)" },
     { value: "encerrado", label: "Encerrado (Sem resolução)" },
     { value: "rascunho", label: "Rascunho" },
+    { value: "escalonado", label: "Escalonado" },
   ];
 
   const opcoesPrioridade: CustomSelectOption[] = [
@@ -258,7 +260,7 @@ export function TabelaChamados({
     if (filtroPrazo === "vencidos") return info.tipo === "vencido";
     if (filtroPrazo === "vence_hoje") return info.tipo === "vence_hoje";
     if (filtroPrazo === "vence_2dias") return info.tipo === "vence_2dias";
-    if (filtroPrazo === "pendentes") return c.situacao === "aguardando";
+    if (filtroPrazo === "pendentes") return chamadoEstaAberto(c.situacao);
     return true;
   });
 
@@ -1011,7 +1013,7 @@ export function TabelaChamados({
                       key={c.id}
                       className={`transition-colors ${infoPrazo.bordaTabela} ${
                         infoPrazo.bgLinha ||
-                        (c.prioridade === "priorizar" && c.situacao === "aguardando"
+                        (c.prioridade === "priorizar" && chamadoEstaAberto(c.situacao)
                           ? "bg-alerta-fundo/10"
                           : "")
                       }`}
@@ -1052,13 +1054,7 @@ export function TabelaChamados({
                                   : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
                           }`}
                         >
-                          {c.situacao === "concluido"
-                            ? "Concluído"
-                            : c.situacao === "aguardando"
-                              ? "Aguardando"
-                              : c.situacao === "rascunho"
-                                ? "Rascunho"
-                                : "Encerrado"}
+                          {ROTULOS_SITUACAO[c.situacao]}
                         </span>
                       </td>
 
@@ -1108,7 +1104,7 @@ export function TabelaChamados({
 
                       {/* Prazo com Identificador Vermelho / Urgência */}
                       <td className="text-right whitespace-nowrap">
-                        {c.situacao === "aguardando" ? (
+                        {chamadoEstaAberto(c.situacao) ? (
                           <div className="inline-flex flex-col items-end gap-1">
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${infoPrazo.badgeClasse}`}
@@ -1223,13 +1219,7 @@ export function TabelaChamados({
                               : "bg-fundo text-texto border-borda"
                       }`}
                     >
-                      {c.situacao === "concluido"
-                        ? "Concluído"
-                        : c.situacao === "aguardando"
-                          ? "Aguardando"
-                          : c.situacao === "rascunho"
-                            ? "Rascunho"
-                            : "Encerrado"}
+                      {ROTULOS_SITUACAO[c.situacao]}
                     </span>
                     {c.polo_nome && (
                       <span className="rounded border border-borda bg-fundo px-1.5 py-0.5 text-[10px] font-medium text-texto">
@@ -1254,7 +1244,7 @@ export function TabelaChamados({
                   <span className="truncate max-w-[50%]">
                     {c.motivos?.codigo} {c.motivos?.nome}
                   </span>
-                  {c.situacao === "aguardando" ? (
+                  {chamadoEstaAberto(c.situacao) ? (
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border ${infoPrazo.badgeClasse}`}
                     >

@@ -18,9 +18,9 @@ BEGIN
 END
 GO
 
--- 2. Adicionar nova restrição permitindo ('aguardando', 'concluido', 'encerrado', 'rascunho')
+-- 2. Adicionar nova restrição permitindo ('aguardando', 'concluido', 'encerrado', 'rascunho', 'escalonado')
 ALTER TABLE dados.chamados ADD CONSTRAINT ck_chamados_situacao
-    CHECK (situacao IN ('aguardando', 'concluido', 'encerrado', 'rascunho'));
+    CHECK (situacao IN ('aguardando', 'concluido', 'encerrado', 'rascunho', 'escalonado'));
 GO
 
 PRINT 'Nova restrição ck_chamados_situacao aplicada com sucesso incluindo "rascunho"!';

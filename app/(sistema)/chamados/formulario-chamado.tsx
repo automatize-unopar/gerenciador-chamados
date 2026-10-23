@@ -104,6 +104,7 @@ export function FormularioChamado({
     { value: "concluido", label: "Concluído (resolvido)" },
     { value: "encerrado", label: "Encerrado (sem resolver)" },
     { value: "rascunho", label: "Rascunho" },
+    { value: "escalonado", label: "Escalonado" },
   ];
 
   const opcoesPrioridade: CustomSelectOption[] = [
@@ -445,7 +446,9 @@ export function FormularioChamado({
               options={opcoesSituacao}
               value={situacao}
               onChange={(val) =>
-                setSituacao(val as "aguardando" | "concluido" | "encerrado" | "rascunho")
+                setSituacao(
+                  val as "aguardando" | "concluido" | "encerrado" | "rascunho" | "escalonado"
+                )
               }
             />
           </div>

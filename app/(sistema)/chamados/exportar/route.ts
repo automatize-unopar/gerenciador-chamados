@@ -1,5 +1,6 @@
+import { chamadoEstaAberto } from "@/lib/chamados/situacao";
 import { type NextRequest, NextResponse } from "next/server";
-import { format, startOfDay, parseISO, differenceInCalendarDays } from "date-fns";
+import { format, startOfDay, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { obterPerfilAtual } from "@/lib/auth/perfil";
 import { comUsuario } from "@/lib/db/comUsuario";
@@ -125,9 +126,9 @@ export async function GET(request: NextRequest) {
 
   const chamadosFiltrados = chamados.filter((c: any) => {
     if (!filtroPrazo || filtroPrazo === "todos") return true;
-    if (filtroPrazo === "pendentes") return c.situacao === "aguardando";
-    if (c.situacao !== "aguardando") return false;
-    const diff = differenceInCalendarDays(startOfDay(parseISO(c.prazo)), hoje);
+    if (filtroPrazo === "pendentes") return chamadoEstaAberto(c.situacao);
+    if (!chamadoEstaAberto(c.situacao)) return false;
+    const diff = differenceInCalendarDays(startOfDay(new Date(c.prazo)), hoje);
     if (filtroPrazo === "vencidos") return diff < 0;
     if (filtroPrazo === "vence_hoje") return diff === 0;
     if (filtroPrazo === "vence_2dias") return diff === 1 || diff === 2;

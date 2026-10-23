@@ -7,6 +7,7 @@ import { comUsuario, comTransacao } from "@/lib/db/comUsuario";
 import { getPool, sql } from "@/lib/db/pool";
 import { salvarArquivoLocal } from "@/lib/storage/anexos";
 import { limparCpf, validarCpf } from "@/lib/utils/cpf";
+import { SITUACOES_CHAMADO } from "@/lib/chamados/situacao";
 
 const chamadoSchema = z.object({
   protocolo: z
@@ -61,7 +62,7 @@ const chamadoSchema = z.object({
     .transform((val) => (val ? val.replace(/[^\d+()\-\s]/g, "").slice(0, 20) : null)),
   motivo_id: z.string().uuid("Selecione um motivo válido do catálogo."),
   descricao: z.string().trim().min(1, "A descrição do chamado é obrigatória."),
-  situacao: z.enum(["aguardando", "concluido", "encerrado", "rascunho"] as const),
+  situacao: z.enum(SITUACOES_CHAMADO),
   prioridade: z.enum(["normal", "priorizar"] as const),
   data_solicitacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data de solicitação inválida."),
   prazo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data de prazo inválida."),

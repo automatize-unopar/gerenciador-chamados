@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { lerObjetoAuditoria, lerCamposAlterados, dataIsoOuNull } from "@/lib/chamados/historico";
 import { obterPerfilAtual } from "@/lib/auth/perfil";
 import { comUsuario } from "@/lib/db/comUsuario";
 import { sql } from "@/lib/db/pool";
@@ -32,7 +33,7 @@ export default async function PaginaDetalheChamado({ params }: DetailPageProps) 
             pol.codigo AS polo_codigo,
             c.contato_telefone,
             CAST(c.motivo_id AS NVARCHAR(50)) AS motivo_id,
-            descricao,
+            c.descricao,
             c.situacao,
             c.prioridade,
             c.data_solicitacao,
@@ -170,10 +171,12 @@ export default async function PaginaDetalheChamado({ params }: DetailPageProps) 
     situacao: chamado.situacao,
     prioridade: chamado.prioridade,
     data_solicitacao: chamado.data_solicitacao
-      ? new Date(chamado.data_solicitacao).toISOString()
+      ? dataIsoOuNull(chamado.data_solicitacao) || new Date().toISOString()
       : new Date().toISOString(),
-    prazo: chamado.prazo ? new Date(chamado.prazo).toISOString() : new Date().toISOString(),
-    data_conclusao: chamado.data_conclusao ? new Date(chamado.data_conclusao).toISOString() : null,
+    prazo: chamado.prazo
+      ? dataIsoOuNull(chamado.prazo) || new Date().toISOString()
+      : new Date().toISOString(),
+    data_conclusao: dataIsoOuNull(chamado.data_conclusao),
     chamado_vinculado_id: chamado.chamado_vinculado_id,
     observacao: chamado.observacao,
     importado: Boolean(chamado.importado),
@@ -182,10 +185,10 @@ export default async function PaginaDetalheChamado({ params }: DetailPageProps) 
     atualizado_por: chamado.atualizado_por,
     atualizado_por_nome: chamado.atualizado_por_nome || chamado.atualizador_nome,
     criado_em: chamado.criado_em
-      ? new Date(chamado.criado_em).toISOString()
+      ? dataIsoOuNull(chamado.criado_em) || new Date().toISOString()
       : new Date().toISOString(),
     atualizado_em: chamado.atualizado_em
-      ? new Date(chamado.atualizado_em).toISOString()
+      ? dataIsoOuNull(chamado.atualizado_em) || new Date().toISOString()
       : new Date().toISOString(),
     motivos: chamado.motivo_id_join
       ? { id: chamado.motivo_id_join, codigo: chamado.motivo_codigo, nome: chamado.motivo_nome }
@@ -216,7 +219,9 @@ export default async function PaginaDetalheChamado({ params }: DetailPageProps) 
     descricao: a.descricao,
     criado_por: a.criado_por,
     criado_por_nome: a.criado_por_nome,
-    criado_em: a.criado_em ? new Date(a.criado_em).toISOString() : new Date().toISOString(),
+    criado_em: a.criado_em
+      ? dataIsoOuNull(a.criado_em) || new Date().toISOString()
+      : new Date().toISOString(),
   }));
 
   const logsFormatados: LogAuditoria[] = logs.map((l: any) => ({
@@ -224,22 +229,36 @@ export default async function PaginaDetalheChamado({ params }: DetailPageProps) 
     tabela: l.tabela,
     registro_id: l.registro_id,
     operacao: l.operacao,
-    dados_antes: typeof l.dados_antes === "string" ? JSON.parse(l.dados_antes) : l.dados_antes,
-    dados_depois: typeof l.dados_depois === "string" ? JSON.parse(l.dados_depois) : l.dados_depois,
-    campos_alterados: l.campos_alterados,
+    dados_antes: lerObjetoAuditoria(l.dados_antes),
+    dados_depois: lerObjetoAuditoria(l.dados_depois),
+    campos_alterados: lerCamposAlterados(l.campos_alterados),
     usuario_id: l.usuario_id,
     usuario_nome: l.usuario_nome,
     protocolo: l.protocolo,
     ip: l.ip,
-    criado_em: l.criado_em ? new Date(l.criado_em).toISOString() : new Date().toISOString(),
+    criado_em: l.criado_em
+      ? dataIsoOuNull(l.criado_em) || new Date().toISOString()
+      : new Date().toISOString(),
   }));
 
   return (
     <PainelDetalheChamado
       chamado={chamadoFormatado as any}
       arquivos={arquivosFormatados as any}
-      chamadoAnterior={chamadoAnterior}
-      chamadosPosteriores={chamadosPosteriores}
+      chamadoAnterior={
+        chamadoAnterior
+          ? {
+              ...chamadoAnterior,
+              data_solicitacao:
+                dataIsoOuNull(chamadoAnterior.data_solicitacao) ||
+                chamadoFormatado.data_solicitacao,
+            }
+          : null
+      }
+      chamadosPosteriores={chamadosPosteriores.map((post: any) => ({
+        ...post,
+        data_solicitacao: dataIsoOuNull(post.data_solicitacao) || chamadoFormatado.data_solicitacao,
+      }))}
       logs={logsFormatados}
       perfilAtual={perfilAtual}
     />

@@ -1,3 +1,4 @@
+import { chamadoEstaAberto } from "@/lib/chamados/situacao";
 import { obterPerfilAtual } from "@/lib/auth/perfil";
 import { comUsuario } from "@/lib/db/comUsuario";
 import { sql } from "@/lib/db/pool";
@@ -207,7 +208,7 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
   let totalConcluidosGeral = 0;
 
   for (const c of lista) {
-    if (c.situacao === "aguardando") aguardando++;
+    if (chamadoEstaAberto(c.situacao)) aguardando++;
     if (c.situacao === "concluido") concluidos++;
     if (c.situacao === "encerrado") encerrados++;
 
@@ -244,7 +245,7 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
       }
     }
 
-    if (c.situacao === "aguardando") {
+    if (chamadoEstaAberto(c.situacao)) {
       if (isBefore(dataPrazo, hojeStart)) {
         vencidos++;
         chamadosCriticos.push({
