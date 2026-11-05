@@ -61,10 +61,11 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
         sqlPolo = " AND c.polo_id = @poloId";
       }
 
-      req.input("dtInicio", sql.DateTimeOffset, new Date(dataInicioStr));
-      req.input("dtFim", sql.DateTimeOffset, new Date(dataFimStr + "T23:59:59.999Z"));
+      // Usar sql.Date (sem hora/fuso) para compatibilidade com a coluna data_solicitacao (tipo Date no banco)
+      req.input("dtInicio", sql.Date, new Date(dataInicioStr + "T12:00:00"));
+      req.input("dtFim", sql.Date, new Date(dataFimStr + "T12:00:00"));
       const dtInicio12m = format(subMonths(hoje, 11), "yyyy-MM-01");
-      req.input("dtInicio12m", sql.DateTimeOffset, new Date(dtInicio12m));
+      req.input("dtInicio12m", sql.Date, new Date(dtInicio12m + "T12:00:00"));
 
       const batch = await req.query(`
         -- 1. Perfis ativos e avatares
@@ -128,12 +129,34 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
 
       const rsets = batch.recordsets as any[];
 
-      return {
+      const result = {
         perfis: rsets[0] || [],
         polos: rsets[1] || [],
         chamadosPeriodo: rsets[2] || [],
         chamados12m: rsets[3] || [],
       };
+
+      // LOG DEBUG — remover após confirmar o ranking funciona
+      console.log(
+        "[PAINEL_DEBUG]",
+        JSON.stringify({
+          periodo: params.periodo || "mes_atual",
+          poloId: poloId,
+          dataInicioStr,
+          dataFimStr,
+          totalPerfis: result.perfis.length,
+          totalChamadosPeriodo: result.chamadosPeriodo.length,
+          totalChamados12m: result.chamados12m.length,
+          amostraChamados: result.chamadosPeriodo.slice(0, 3).map((c: any) => ({
+            protocolo: c.protocolo,
+            data_solicitacao: c.data_solicitacao,
+            criador_id: c.criador_id,
+            criador_nome: c.criador_nome,
+          })),
+        })
+      );
+
+      return result;
     }
   );
 
