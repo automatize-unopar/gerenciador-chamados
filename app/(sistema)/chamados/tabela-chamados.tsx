@@ -1051,7 +1051,9 @@ export function TabelaChamados({
                                 ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
                                 : c.situacao === "rascunho"
                                   ? "bg-zinc-100 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
-                                  : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                  : c.situacao === "escalonado"
+                                    ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                                    : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
                           }`}
                         >
                           {ROTULOS_SITUACAO[c.situacao]}
@@ -1216,7 +1218,9 @@ export function TabelaChamados({
                             ? "bg-fundo text-texto-suave border-borda"
                             : c.situacao === "rascunho"
                               ? "bg-zinc-100 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300"
-                              : "bg-fundo text-texto border-borda"
+                              : c.situacao === "escalonado"
+                                ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                                : "bg-fundo text-texto border-borda"
                       }`}
                     >
                       {ROTULOS_SITUACAO[c.situacao]}

@@ -193,7 +193,9 @@ export function PainelDetalheChamado({
                     ? "bg-sucesso/15 text-sucesso border-sucesso/40"
                     : chamado.situacao === "encerrado"
                       ? "bg-fundo text-texto-suave border-borda"
-                      : "bg-acento/15 text-acento border-acento/40"
+                      : chamado.situacao === "escalonado"
+                        ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                        : "bg-acento/15 text-acento border-acento/40"
                 }`}
               >
                 {ROTULOS_SITUACAO[chamado.situacao]}
