@@ -1,17 +1,10 @@
 import { chamadoEstaAberto } from "@/lib/chamados/situacao";
 import { obterPerfilAtual } from "@/lib/auth/perfil";
-import { comUsuario } from "@/lib/db/comUsuario";
+import { comTransacao } from "@/lib/db/comUsuario";
+import { obterPeriodoPainel } from "@/lib/chamados/periodo-painel";
 import { sql } from "@/lib/db/pool";
 import { PainelDashboard } from "./painel-dashboard";
-import {
-  startOfMonth,
-  endOfMonth,
-  subMonths,
-  format,
-  isBefore,
-  addDays,
-  startOfDay,
-} from "date-fns";
+import { subMonths, format, isBefore, addDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface PageProps {
@@ -27,32 +20,20 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
 
   const podeVerTodosPolos = perfilAtual.papel === "admin" || perfilAtual.papel === "coordenador";
 
-  const periodo = params.periodo || "mes_atual";
   // Atendentes visualizam obrigatoriamente apenas o seu próprio polo
   const poloId = podeVerTodosPolos ? params.polo_id || "todos" : perfilAtual.polo_id || "sem_polo";
   const hoje = new Date();
 
-  let dataInicioStr = "";
-  let dataFimStr = format(hoje, "yyyy-MM-dd");
+  const hojeSP = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(hoje);
+  const periodo = obterPeriodoPainel(params.periodo, hojeSP);
 
-  if (periodo === "mes_atual") {
-    dataInicioStr = format(startOfMonth(hoje), "yyyy-MM-01");
-    dataFimStr = format(endOfMonth(hoje), "yyyy-MM-dd");
-  } else if (periodo === "semestre_atual") {
-    const ano = hoje.getFullYear();
-    const mes = hoje.getMonth() + 1;
-    if (mes <= 6) {
-      dataInicioStr = `${ano}-01-01`;
-      dataFimStr = `${ano}-06-30`;
-    } else {
-      dataInicioStr = `${ano}-07-01`;
-      dataFimStr = `${ano}-12-31`;
-    }
-  } else {
-    dataInicioStr = format(subMonths(hoje, 11), "yyyy-MM-01");
-  }
-
-  const dadosBanco = await comUsuario(
+  // A transação mantém o contexto e as consultas na mesma conexão física.
+  const dadosBanco = await comTransacao(
     { usuario_id: perfilAtual.id, papel: perfilAtual.papel },
     async (req) => {
       let sqlPolo = "";
@@ -61,9 +42,12 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
         sqlPolo = " AND c.polo_id = @poloId";
       }
 
-      // Usar sql.Date (sem hora/fuso) para compatibilidade com a coluna data_solicitacao (tipo Date no banco)
-      req.input("dtInicio", sql.Date, new Date(dataInicioStr + "T12:00:00"));
-      req.input("dtFim", sql.Date, new Date(dataFimStr + "T12:00:00"));
+      let sqlPeriodo = "";
+      if (periodo.inicio && periodo.fimExclusivo) {
+        req.input("dtInicio", sql.Date, new Date(periodo.inicio + "T12:00:00Z"));
+        req.input("dtFim", sql.Date, new Date(periodo.fimExclusivo + "T12:00:00Z"));
+        sqlPeriodo = " AND c.data_solicitacao >= @dtInicio AND c.data_solicitacao < @dtFim";
+      }
       const dtInicio12m = format(subMonths(hoje, 11), "yyyy-MM-01");
       req.input("dtInicio12m", sql.Date, new Date(dtInicio12m + "T12:00:00"));
 
@@ -111,8 +95,7 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
         LEFT JOIN dados.motivos m ON m.id = c.motivo_id
         LEFT JOIN dados.perfis p ON p.id = c.criado_por
         WHERE c.excluido_em IS NULL
-          AND c.data_solicitacao >= @dtInicio
-          AND c.data_solicitacao <= @dtFim
+          ${sqlPeriodo}
           ${sqlPolo};
 
         -- 4. Chamados dos últimos 12 meses
@@ -135,26 +118,6 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
         chamadosPeriodo: rsets[2] || [],
         chamados12m: rsets[3] || [],
       };
-
-      // LOG DEBUG — remover após confirmar o ranking funciona
-      console.log(
-        "[PAINEL_DEBUG]",
-        JSON.stringify({
-          periodo: params.periodo || "mes_atual",
-          poloId: poloId,
-          dataInicioStr,
-          dataFimStr,
-          totalPerfis: result.perfis.length,
-          totalChamadosPeriodo: result.chamadosPeriodo.length,
-          totalChamados12m: result.chamados12m.length,
-          amostraChamados: result.chamadosPeriodo.slice(0, 3).map((c: any) => ({
-            protocolo: c.protocolo,
-            data_solicitacao: c.data_solicitacao,
-            criador_id: c.criador_id,
-            criador_nome: c.criador_nome,
-          })),
-        })
-      );
 
       return result;
     }
@@ -263,7 +226,7 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
 
       if (c.situacao === "concluido") {
         contagemColaboradores[colabId].resolvidos++;
-      } else {
+      } else if (chamadoEstaAberto(c.situacao)) {
         contagemColaboradores[colabId].abertos++;
       }
     }
@@ -456,7 +419,8 @@ export default async function PaginaPainel({ searchParams }: PageProps) {
   return (
     <PainelDashboard
       dados={dadosDashboard}
-      periodoSelecionado={periodo}
+      periodoSelecionado={periodo.selecao}
+      periodoRotulo={periodo.rotulo}
       polos={polosFormatados}
       poloSelecionado={poloId}
       perfilAtual={perfilAtual}

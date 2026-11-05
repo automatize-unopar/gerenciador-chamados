@@ -85,6 +85,7 @@ interface DashboardData {
 interface PainelDashboardProps {
   dados: DashboardData;
   periodoSelecionado: string;
+  periodoRotulo: string;
   polos?: Polo[];
   poloSelecionado?: string;
   perfilAtual?: Perfil;
@@ -96,6 +97,7 @@ type TipoIndicador =
 export function PainelDashboard({
   dados,
   periodoSelecionado,
+  periodoRotulo,
   polos = [],
   poloSelecionado = "todos",
   perfilAtual,
@@ -243,6 +245,7 @@ export function PainelDashboard({
           <p className="text-xs text-texto-suave mt-0.5">
             Métricas operacionais de atendimento, produtividade, cumprimento de prazos e motivos.
           </p>
+          <p className="text-xs text-texto-suave mt-1">Período: {periodoRotulo}</p>
         </div>
 
         {/* Barra de Filtros Unificada e Perfeitamente Alinhada */}
@@ -265,7 +268,18 @@ export function PainelDashboard({
           )}
 
           {/* Segmented Control de Período Compacto */}
-          <div className="inline-flex h-9 items-center rounded-lg border border-borda bg-fundo p-1 shadow-2xs shrink-0">
+          <div className="inline-flex min-h-9 max-w-full flex-wrap items-center rounded-lg border border-borda bg-fundo p-1 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => mudarPeriodo("todos")}
+              className={`h-7 px-3 rounded-md text-xs font-semibold transition-all ${
+                periodo === "todos"
+                  ? "bg-acento text-white shadow-xs"
+                  : "text-texto-suave hover:text-texto"
+              }`}
+            >
+              Todo o histórico
+            </button>
             <button
               type="button"
               onClick={() => mudarPeriodo("mes_atual")}

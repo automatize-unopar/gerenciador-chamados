@@ -271,7 +271,19 @@ export function TabelaChamados({
     polo?: Set<string>;
     contato?: Set<string>;
     motivo?: Set<string>;
+    situacao?: Set<string>;
   }>({});
+
+  const itensSituacao = useMemo(() => {
+    const contagem = new Map<string, number>();
+    for (const chamado of chamadosFiltrados) {
+      const rotulo = ROTULOS_SITUACAO[chamado.situacao];
+      contagem.set(rotulo, (contagem.get(rotulo) || 0) + 1);
+    }
+    return Object.entries(ROTULOS_SITUACAO)
+      .map(([, valor]) => ({ valor, contagem: contagem.get(valor) || 0 }))
+      .filter((item) => item.contagem > 0);
+  }, [chamadosFiltrados]);
 
   // Listas de valores únicos com contagens para os filtros estilo Excel
   const itensProtocolo = useMemo(() => {
@@ -332,6 +344,9 @@ export function TabelaChamados({
   // Lista final combinada com filtros rápidos + filtros estilo Excel
   const chamadosExibicao = useMemo(() => {
     return chamadosFiltrados.filter((c) => {
+      if (filtrosExcel.situacao && filtrosExcel.situacao.size > 0) {
+        if (!filtrosExcel.situacao.has(ROTULOS_SITUACAO[c.situacao])) return false;
+      }
       if (filtrosExcel.protocolo && filtrosExcel.protocolo.size > 0) {
         if (!c.protocolo || !filtrosExcel.protocolo.has(c.protocolo.trim())) return false;
       }
@@ -949,7 +964,18 @@ export function TabelaChamados({
                     />
                   </div>
                 </th>
-                <th className="w-28 text-center bg-superficie-destaque">Situação</th>
+                <th className="w-28 bg-superficie-destaque">
+                  <div className="flex items-center justify-between gap-1">
+                    <span>Situação</span>
+                    <FiltroColunaExcel
+                      titulo="Situação"
+                      alinhamento="right"
+                      itens={itensSituacao}
+                      selecionados={filtrosExcel.situacao}
+                      onAplicar={(vals) => setFiltrosExcel((prev) => ({ ...prev, situacao: vals }))}
+                    />
+                  </div>
+                </th>
                 <th className="w-32 bg-superficie-destaque">
                   <div className="flex items-center justify-between gap-1">
                     <span>Contato</span>
@@ -1048,7 +1074,7 @@ export function TabelaChamados({
                             c.situacao === "concluido"
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
                               : c.situacao === "encerrado"
-                                ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                                ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800"
                                 : c.situacao === "rascunho"
                                   ? "bg-zinc-100 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
                                   : c.situacao === "escalonado"
@@ -1215,7 +1241,7 @@ export function TabelaChamados({
                         c.situacao === "concluido"
                           ? "bg-sucesso-fundo/40 text-sucesso border-sucesso/30"
                           : c.situacao === "encerrado"
-                            ? "bg-fundo text-texto-suave border-borda"
+                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800"
                             : c.situacao === "rascunho"
                               ? "bg-zinc-100 text-zinc-700 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300"
                               : c.situacao === "escalonado"
