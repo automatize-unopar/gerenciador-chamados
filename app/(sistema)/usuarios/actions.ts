@@ -31,6 +31,7 @@ export async function revelarSenhaExternaAction(
     const cred = await comUsuario({ usuario_id: perfil.id, papel: perfil.papel }, async (req) => {
       const res = await req
         .input("perfil_alvo", sql.VarChar(50), perfilIdAlvo)
+        .input("justificativa", sql.NVarChar(200), "Visualização pelo Administrador")
         .input("ip", sql.VarChar(45), ip.slice(0, 45))
         .input("user_agent", sql.NVarChar(400), userAgent.slice(0, 400))
         .execute("dados.revelar_credencial");
